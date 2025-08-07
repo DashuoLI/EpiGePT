@@ -3,7 +3,7 @@ import torch
 torch.set_default_tensor_type(torch.FloatTensor)
 from torch.utils.data import Dataset
 from pyfasta import Fasta
-from config import *
+from model.config import *
 import random
 import pandas as pd
 import sys

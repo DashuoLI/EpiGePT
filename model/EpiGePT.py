@@ -9,8 +9,8 @@ import argparse
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-from dataset import GenomicData
-from config import *
+from model.dataset import GenomicData
+from model.config import *
 
 import torch
 import torch.nn as nn

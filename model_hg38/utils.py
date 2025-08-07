@@ -37,6 +37,7 @@ def model_predict(model,seq_embeds,tf_feature):
 
 
 def load_weights(model,path):
+    #model.load_state_dict(torch.load('pretrainModel/model.ckpt',map_location='cuda:0', weights_only=False)['state_dict'])
     model.load_state_dict(torch.load('pretrainModel/model.ckpt',map_location='cuda:0')['state_dict'])
     model = model.eval()
     model = model.cuda()

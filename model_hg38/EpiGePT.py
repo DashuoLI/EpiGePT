@@ -9,7 +9,6 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_auc_score,roc_curve
 import math
 
-
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
@@ -19,7 +18,7 @@ from scipy.stats import pearsonr
 torch.backends.cudnn.deterministic = True
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 from model_hg38.config import *
-from dataset import GenomicData
+from model_hg38.dataset import GenomicData
 
 import torch
 import torch.nn as nn
