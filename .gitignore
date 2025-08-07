@@ -1,0 +1,6 @@
+hg38.fa*
+logs/
+pretrainModel/
+venv_for_EpiGePT_requirementsfile/
+__pycache__/
+/EpiGePT/
