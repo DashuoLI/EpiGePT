@@ -29,18 +29,21 @@ def model_predict(model,seq_embeds,tf_feature):
     tf_feature = torch.from_numpy(tf_feature)
     seq_embeds = seq_embeds.type(torch.FloatTensor)
     tf_feature = tf_feature.type(torch.FloatTensor)
-    seq_embeds = seq_embeds.to('cuda')
-    tf_feature = tf_feature.to('cuda')
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    seq_embeds = seq_embeds.to(device)
+    tf_feature = tf_feature.to(device)
     signals = model(seq_embeds,tf_feature)
     np_signals = signals.cpu().detach().numpy()
     return np_signals
 
 
 def load_weights(model,path):
-    #model.load_state_dict(torch.load('pretrainModel/model.ckpt',map_location='cuda:0', weights_only=False)['state_dict'])
-    model.load_state_dict(torch.load('pretrainModel/model.ckpt',map_location='cuda:0')['state_dict'])
+    map_location = 'cuda:0' if torch.cuda.is_available() else torch.device('cpu')
+    ret_dict = torch.load('pretrainModel/model.ckpt',map_location=map_location, weights_only=False)['state_dict']
+    del ret_dict['encoder.embeddings.position_ids']
+    model.load_state_dict(ret_dict)
     model = model.eval()
-    model = model.cuda()
+    model = model.cuda() if torch.cuda.is_available() else model.to(torch.device("cpu"))
     return model
 
 def get_motif_score(tf_list, motif2tf, isContain, region_file, motifscan_file, save = True):
