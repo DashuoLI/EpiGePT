@@ -138,7 +138,6 @@ class EpiGePT(pl.LightningModule):
         self.log('val_loss', loss)
         
 
-
     def setup(self,stage):
         np.random.seed(123)
         train_idx = np.load('../train_cells.npy')

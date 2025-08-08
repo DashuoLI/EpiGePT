@@ -12,7 +12,6 @@ import os
 from pyfasta import Fasta
 import numpy as np
 import pandas as pd
-os.environ['CUDA_VISIBLE_DEVICES']='1'
 from model_hg38 import EpiGePT
 from model_hg38.config import *
 from model_hg38.utils import *
@@ -24,9 +23,11 @@ from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 torch.backends.cudnn.deterministic = True
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+os.environ['CUDA_VISIBLE_DEVICES']= '1' if torch.cuda.is_available() else '0'
 from model.config import *
 
 print(torch.cuda.is_available())
+print(os.environ['CUDA_VISIBLE_DEVICES'])
 
 # Loading model
 model = EpiGePT.EpiGePT(WORD_NUM,TF_DIM,BATCH_SIZE)
@@ -42,11 +43,22 @@ model = load_weights(model,'pretrainModel/model.ckpt')
 #print(predict.shape) # (BATCH_SIZE, Number of bins, Number of epigenomic profiles)
 
 # Testing incremental training
-trainer = pl.Trainer(
-	max_epochs=90,
-	logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=5),
-	callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3)],
-	default_root_dir=os.getcwd(),
-	gpus = 1,
-	)
-trainer.fit(model)
+if __name__ == '__main__':
+	if torch.cuda.is_available():
+		trainer = pl.Trainer(
+			max_epochs=90,
+			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=5),
+			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3)],
+			default_root_dir=os.getcwd(),
+			gpus = 1,
+			)
+	else:
+		trainer = pl.Trainer(
+			max_epochs=90,
+			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=5),
+			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3)],
+			default_root_dir=os.getcwd(),
+			# gpus = 1,
+			)
+
+	trainer.fit(model)
