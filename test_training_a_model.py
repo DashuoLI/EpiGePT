@@ -50,7 +50,7 @@ if __name__ == '__main__':
 	checkpoint_callback = ModelCheckpoint(
 		# dirpath=checkpoints_path, # <--- specify this on the trainer itself for version control
 		filename="fa_classifier_{epoch:02d}",
-		every_n_epochs=val_every_n_epochs,
+		period=val_every_n_epochs,
 		save_top_k=-1,  # <--- this is important!
 	)
 	if torch.cuda.is_available():
