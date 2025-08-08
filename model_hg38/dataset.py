@@ -7,6 +7,8 @@ from model_hg38.config import *
 import random
 import pandas as pd
 import sys
+from tqdm import tqdm
+import os
 
 acgt2num = {'A': 0,
             'C': 1,
@@ -15,11 +17,29 @@ acgt2num = {'A': 0,
 
 
 class GenomicData(Dataset):
+    def load_large_file(filename):
+        blocksize = 1024  # tune this for performance/granularity
+        try:
+            mmap = np.load(filename, mmap_mode='r')
+            ret = np.empty_like(mmap)
+            n_blocks = int(np.ceil(mmap.shape[0] / blocksize))
+            for b in tqdm(range(n_blocks), desc=f"Loading {os.path.basename(filename)}"):
+                ret[b*blocksize : (b+1) * blocksize] = mmap[b*blocksize : (b+1) * blocksize]
+        finally:
+            del mmap  # make sure file is closed again
+        return ret
+
     def __init__(self,train_idx,path = 'EpiGePT',quantile_norm=False,isTrain = True):
+        print('loading genome data...')
         self.geno_path = path
         self.genome = Fasta('%s/data/genome/hg38.fa'%path)
+
+        print('loading encode data...')
         self.train_idx = train_idx
-        self.np_tf_bs = np.load('%s/data/encode/motifscore_v1.npy'%path)
+
+        # self.np_tf_bs = np.load('%s/data/encode/motifscore_v1.npy'%path, mmap_mode='r')
+        self.np_tf_bs = GenomicData.load_large_file(f'{path}/data/encode/motifscore_v1.npy')
+        print(f'Shape of loaded array: {self.np_tf_bs.shape}')
 
         pd_tf_gexp = pd.read_csv('%s/data/encode/aggregated_tf_expr.csv'%path,header=0,sep='\t',index_col=[0])
         pd_tf_gexp = pd_tf_gexp.T
@@ -27,12 +47,19 @@ class GenomicData(Dataset):
             pd_tf_gexp = pd.DataFrame.transpose(self.quantile_norm_trans(pd.DataFrame.transpose(pd_tf_gexp)))
         self.pd_tf_gexp = np.log(pd_tf_gexp+1)
         
-        self.signals = np.load('%s/data/encode/targets_data_v1.npy'%path)
-        self.mask_mat = np.load('%s/data/encode/targets_mask_v1.npy'%path)
+        # self.signals = np.load(f'{path}/data/encode/targets_data_v1.npy', mmap_mode='r')
+        self.signals = GenomicData.load_large_file(f'{path}/data/encode/targets_data_v1.npy')
+        print(f'Shape of loaded array: {self.signals.shape}')
+
+        # self.mask_mat = np.load(f'{path}/data/encode/targets_mask_v1.npy', mmap_mode='r')
+        self.mask_mat = GenomicData.load_large_file(f'{path}/data/encode/targets_mask_v1.npy')
+        print(f'Shape of loaded array: {self.mask_mat.shape}')
+
         self.signals = np.log(self.signals + 1)
         self.regions = []
         # >overlap_count_gt50.128k.bin
         # origin
+        print('loading bin data...')
         with open("%s/data/encode/overlap_count_gt50.128k.bin"%path, "rb") as file:
             lines = file.readlines()
         for line in lines:
@@ -50,6 +77,7 @@ class GenomicData(Dataset):
         self.train_idx = train_idx
         print(train_idx)
         print(self.celllines,len(self.celllines))
+    
 
         
     def quantile_norm_trans(self, matrix):
@@ -77,6 +105,8 @@ class GenomicData(Dataset):
     def get_signals(self,region_idx,cellline_idx):
         signals = self.signals[self.train_idx[cellline_idx],region_idx * 1000 : (region_idx + 1)*1000 ,:]
         mask = self.mask_mat[self.train_idx[cellline_idx],:]
+        print('wfz')
+        print(mask.shape)
         mask = np.tile(mask,(1000,1))
         return signals,mask
     

@@ -2,5 +2,7 @@ hg38.fa*
 logs/
 pretrainModel/
 venv_for_EpiGePT_requirementsfile/
+/epi/
 __pycache__/
 /EpiGePT/
+.DS_Store
