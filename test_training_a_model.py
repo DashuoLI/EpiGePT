@@ -21,6 +21,8 @@ import argparse
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint
+
 torch.backends.cudnn.deterministic = True
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 os.environ['CUDA_VISIBLE_DEVICES']= '1' if torch.cuda.is_available() else '0'
@@ -44,11 +46,18 @@ model = load_weights(model,'pretrainModel/model.ckpt')
 
 # Testing incremental training
 if __name__ == '__main__':
+	val_every_n_epochs = 1
+	checkpoint_callback = ModelCheckpoint(
+		# dirpath=checkpoints_path, # <--- specify this on the trainer itself for version control
+		filename="fa_classifier_{epoch:02d}",
+		every_n_epochs=val_every_n_epochs,
+		save_top_k=-1,  # <--- this is important!
+	)
 	if torch.cuda.is_available():
 		trainer = pl.Trainer(
 			max_epochs=90,
 			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=5),
-			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3)],
+			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
 			default_root_dir=os.getcwd(),
 			gpus = 1,
 			)
