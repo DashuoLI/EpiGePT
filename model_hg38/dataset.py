@@ -37,9 +37,11 @@ class GenomicData(Dataset):
         print('loading encode data...')
         self.train_idx = train_idx
 
+        print('loading motifscore...')
+        self.np_tf_bs = np.load('%s/data/encode/motifscore_v1.npy'%path)
         # self.np_tf_bs = np.load('%s/data/encode/motifscore_v1.npy'%path, mmap_mode='r')
-        self.np_tf_bs = GenomicData.load_large_file(f'{path}/data/encode/motifscore_v1.npy')
-        print(f'Shape of loaded array: {self.np_tf_bs.shape}')
+        # self.np_tf_bs = GenomicData.load_large_file(f'{path}/data/encode/motifscore_v1.npy')
+        # print(f'Shape of loaded array: {self.np_tf_bs.shape}')
 
         pd_tf_gexp = pd.read_csv('%s/data/encode/aggregated_tf_expr.csv'%path,header=0,sep='\t',index_col=[0])
         pd_tf_gexp = pd_tf_gexp.T
@@ -47,14 +49,19 @@ class GenomicData(Dataset):
             pd_tf_gexp = pd.DataFrame.transpose(self.quantile_norm_trans(pd.DataFrame.transpose(pd_tf_gexp)))
         self.pd_tf_gexp = np.log(pd_tf_gexp+1)
         
+        print('loading targets...')
+        self.signals = np.load(f'{path}/data/encode/targets_data_v1.npy')
         # self.signals = np.load(f'{path}/data/encode/targets_data_v1.npy', mmap_mode='r')
-        self.signals = GenomicData.load_large_file(f'{path}/data/encode/targets_data_v1.npy')
-        print(f'Shape of loaded array: {self.signals.shape}')
+        # self.signals = GenomicData.load_large_file(f'{path}/data/encode/targets_data_v1.npy')
+        # print(f'Shape of loaded array: {self.signals.shape}')
 
+        print('loading mask...')
+        self.mask_mat = np.load(f'{path}/data/encode/targets_mask_v1.npy')
         # self.mask_mat = np.load(f'{path}/data/encode/targets_mask_v1.npy', mmap_mode='r')
-        self.mask_mat = GenomicData.load_large_file(f'{path}/data/encode/targets_mask_v1.npy')
-        print(f'Shape of loaded array: {self.mask_mat.shape}')
+        # self.mask_mat = GenomicData.load_large_file(f'{path}/data/encode/targets_mask_v1.npy')
+        # print(f'Shape of loaded array: {self.mask_mat.shape}')
 
+        print('taking log of target data...')
         self.signals = np.log(self.signals + 1)
         self.regions = []
         # >overlap_count_gt50.128k.bin
@@ -104,10 +111,7 @@ class GenomicData(Dataset):
 
     def get_signals(self,region_idx,cellline_idx):
         signals = self.signals[self.train_idx[cellline_idx],region_idx * 1000 : (region_idx + 1)*1000 ,:]
-        mask = self.mask_mat[self.train_idx[cellline_idx],:]
-        print('wfz')
-        print(mask.shape)
-        mask = np.tile(mask,(1000,1))
+        mask = self.mask_mat[self.train_idx[cellline_idx],region_idx * 1000 : (region_idx + 1)*1000 ,:]
         return signals,mask
     
     def get_tf_state(self,region_idx,cellline_idx):
