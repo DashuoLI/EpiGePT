@@ -17,7 +17,7 @@ summary = ModelSummary(model, mode='top') # max_depth controls nesting level
 print(summary)
 
 # Simple example
-print(f'Running simple example to validate model loading...')
+print(f'---=== Running simple example to validate model loading... ===---')
 
 SEQ_LENGTH = 128000
 input_tf_feature = np.random.rand(1000, 711) # 711 TFs motif_score
@@ -31,26 +31,46 @@ predict.shape # (BATCH_SIZE, Number of bins, Number of epigenomic profiles)
 
 
 # Actual prediction
-
+cell_type_array = [2]
 from model_hg38.dataset import GenomicData
-dataset = GenomicData([2])
+dataset = GenomicData(cell_type_array)
 
+print(dataset.signals)
+
+dataset_sample_idx = 2
 from model_hg38.dataset import GenomicData
 print("seq_embeds, tf_feats,targets_label,targets_mask")
-print(len(dataset[0]))
-seq_embeds = np.expand_dims(dataset[0][0].numpy(), axis=0)
-tf_feats = dataset[0][1][:, :-1].numpy()
-targets_label = dataset[0][2].numpy()
-targets_mask = dataset[0][3].numpy()
+print(len(dataset[dataset_sample_idx]))
 
+print('processing seq')
+seq_embeds = np.expand_dims(dataset[dataset_sample_idx][0].numpy(), axis=0)
+print('processing tf')
+tf_feats = dataset[dataset_sample_idx][1][:, :-1].numpy()
+targets_label = dataset[dataset_sample_idx][2].numpy()
+targets_mask = dataset[dataset_sample_idx][3].numpy()
+
+print(f'---=== targets label ===---')
+print(targets_label)
+print(targets_mask)
+
+print(f'---=== Shape of example seq and tf features ===---')
 print(input_seq_feature.shape)
 print(input_tf_feature.shape)
 
+print(f'---=== Shape of inference seq and tf features ===---')
 print(seq_embeds.shape)
 print(tf_feats.shape)
-
+print(targets_label.shape)
+print(targets_mask.shape)
 
 predict = model_predict(model, seq_embeds, tf_feats)
+
+print(f'---=== Shape of prediction results ===---')
 print(predict.shape) # (BATCH_SIZE, Number of bins, Number of epigenomic profiles)
-print(predict[0][0])
+
+idx = 2
+print(f'---=== {idx} row of prediction results ===---')
+print(predict[0][idx])
+print(f'---=== corresponding ground truth label ===---')
 print(targets_label.shape)
+print(targets_label[idx])

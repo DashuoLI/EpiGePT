@@ -38,8 +38,8 @@ class GenomicData(Dataset):
         self.train_idx = train_idx
 
         print('loading motifscore...')
-        self.np_tf_bs = np.load('%s/data/encode/motifscore_v1.npy'%path)
-        # self.np_tf_bs = np.load('%s/data/encode/motifscore_v1.npy'%path, mmap_mode='r')
+        # self.np_tf_bs = np.load('%s/data/encode/motifscore_v1.npy'%path)
+        self.np_tf_bs = np.load('%s/data/encode/motifscore_v1.npy'%path, mmap_mode='r')
         # self.np_tf_bs = GenomicData.load_large_file(f'{path}/data/encode/motifscore_v1.npy')
         # print(f'Shape of loaded array: {self.np_tf_bs.shape}')
 
@@ -50,19 +50,22 @@ class GenomicData(Dataset):
         self.pd_tf_gexp = np.log(pd_tf_gexp+1)
         
         print('loading targets...')
-        self.signals = np.load(f'{path}/data/encode/targets_data_v1.npy')
-        # self.signals = np.load(f'{path}/data/encode/targets_data_v1.npy', mmap_mode='r')
+        # self.signals = np.load(f'{path}/data/encode/targets_data_v1.npy')
+        self.signals = np.load(f'{path}/data/encode/targets_data_v1.npy', mmap_mode='r')
         # self.signals = GenomicData.load_large_file(f'{path}/data/encode/targets_data_v1.npy')
         # print(f'Shape of loaded array: {self.signals.shape}')
 
         print('loading mask...')
-        self.mask_mat = np.load(f'{path}/data/encode/targets_mask_v1.npy')
-        # self.mask_mat = np.load(f'{path}/data/encode/targets_mask_v1.npy', mmap_mode='r')
+        # self.mask_mat = np.load(f'{path}/data/encode/targets_mask_v1.npy')
+        self.mask_mat = np.load(f'{path}/data/encode/targets_mask_v1.npy', mmap_mode='r')
         # self.mask_mat = GenomicData.load_large_file(f'{path}/data/encode/targets_mask_v1.npy')
         # print(f'Shape of loaded array: {self.mask_mat.shape}')
 
-        print('taking log of target data...')
-        self.signals = np.log(self.signals + 1)
+        print('WARNING: SKIPPING TAKING LOG OF TARGET DATA!!!')
+        print('WARNING: SKIPPING TAKING LOG OF TARGET DATA!!!')
+        print('WARNING: SKIPPING TAKING LOG OF TARGET DATA!!!')
+        # print('taking log of target data...')
+        # self.signals = np.log(self.signals + 1)
         self.regions = []
         # >overlap_count_gt50.128k.bin
         # origin
@@ -72,9 +75,16 @@ class GenomicData(Dataset):
         for line in lines:
             self.regions.append(line.decode('utf-8').split('\t')[:3])
             
+	disable_random = 0
         np.random.seed(1234)
-        region_idx_subset = np.random.choice(np.arange(len(self.regions)),size=len(self.regions),replace=False)
-        train_region_idx = np.random.choice(np.arange(len(region_idx_subset)),size=len(self.regions),replace=False)
+
+	if disable_random:
+		region_idx_subset = np.arange(len(self.regions))
+		train_region_idx = np.arange(len(region_idx_subset))
+	else:
+		region_idx_subset = np.random.choice(np.arange(len(self.regions)),size=len(self.regions),replace=False)
+		train_region_idx = np.random.choice(np.arange(len(region_idx_subset)),size=len(self.regions),replace=False)
+
         test_region_idx = [item for item in np.arange(len(region_idx_subset)) if item not in train_region_idx]
         if isTrain:
             self.region_idx_subset = region_idx_subset[train_region_idx]
