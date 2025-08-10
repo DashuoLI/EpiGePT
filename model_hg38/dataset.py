@@ -75,15 +75,15 @@ class GenomicData(Dataset):
         for line in lines:
             self.regions.append(line.decode('utf-8').split('\t')[:3])
             
-	disable_random = 0
+        disable_random = 0
         np.random.seed(1234)
 
-	if disable_random:
-		region_idx_subset = np.arange(len(self.regions))
-		train_region_idx = np.arange(len(region_idx_subset))
-	else:
-		region_idx_subset = np.random.choice(np.arange(len(self.regions)),size=len(self.regions),replace=False)
-		train_region_idx = np.random.choice(np.arange(len(region_idx_subset)),size=len(self.regions),replace=False)
+        if disable_random:
+            region_idx_subset = np.arange(len(self.regions))
+            train_region_idx = np.arange(len(region_idx_subset))
+        else:
+            region_idx_subset = np.random.choice(np.arange(len(self.regions)),size=len(self.regions),replace=False)
+            train_region_idx = np.random.choice(np.arange(len(region_idx_subset)),size=len(self.regions),replace=False)
 
         test_region_idx = [item for item in np.arange(len(region_idx_subset)) if item not in train_region_idx]
         if isTrain:
@@ -94,7 +94,6 @@ class GenomicData(Dataset):
         self.train_idx = train_idx
         print(train_idx)
         print(self.celllines,len(self.celllines))
-    
 
         
     def quantile_norm_trans(self, matrix):
