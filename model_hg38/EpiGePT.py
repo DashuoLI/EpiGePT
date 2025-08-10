@@ -93,6 +93,9 @@ class EpiGePT(pl.LightningModule):
         self.encoder = BertModel(config=self.config_encoder)
         self.fc1 = nn.Linear(256+712, 128)
         self.fc2 = nn.Linear(128, 8)
+        # How to add a new layer to an exsiting model
+        # self.fc3 = nn.Linear(8, 1)
+        # https://discuss.pytorch.org/t/load-only-a-part-of-the-network-with-pretrained-weights/88397
 
     def forward(self,batch_inputs_seq,batch_inputs_tf):
         x = self.convmodule(batch_inputs_seq)
