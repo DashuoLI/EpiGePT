@@ -29,7 +29,7 @@ class GenomicData(Dataset):
             del mmap  # make sure file is closed again
         return ret
 
-    def __init__(self,train_idx,path = 'EpiGePT',quantile_norm=False,isTrain = True):
+    def __init__(self,train_idx,path = 'EpiGePT',quantile_norm=False,isTrain = True, disable_random = False):
         print('loading genome data...')
         self.geno_path = path
         self.genome = Fasta('%s/data/genome/hg38.fa'%path)
@@ -75,7 +75,6 @@ class GenomicData(Dataset):
         for line in lines:
             self.regions.append(line.decode('utf-8').split('\t')[:3])
             
-        disable_random = 0
         np.random.seed(1234)
 
         if disable_random:

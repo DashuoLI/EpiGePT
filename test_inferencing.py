@@ -35,9 +35,10 @@ predict.shape # (BATCH_SIZE, Number of bins, Number of epigenomic profiles)
 # Actual prediction
 cell_type_array = [2]
 from model_hg38.dataset import GenomicData
-dataset = GenomicData(cell_type_array)
+dataset = GenomicData(cell_type_array, disable_random = True)
 
 print(dataset.signals)
+print(dataset.signals.shape)
 
 dataset_sample_idx = 2
 from model_hg38.dataset import GenomicData

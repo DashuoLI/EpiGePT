@@ -49,6 +49,20 @@ model = load_weights(model,model_checkpoint)
 #print("Prediction results")
 #print(predict.shape) # (BATCH_SIZE, Number of bins, Number of epigenomic profiles)
 
+# Testing frozen model parts
+
+model.train()
+
+# Freeze convmodule
+for param in model.convmodule.parameters():
+    param.requires_grad = False
+
+# Freeze encoder
+for param in model.encoder.parameters():
+    param.requires_grad = False
+
+
+
 # Testing incremental training
 if __name__ == '__main__':
 	val_every_n_epochs = 1
@@ -62,7 +76,7 @@ if __name__ == '__main__':
 	if torch.cuda.is_available():
 		trainer = pl.Trainer(
 			max_epochs=90,
-			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=5),
+			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=6),
 			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
 			default_root_dir=os.getcwd(),
 			gpus = 1,

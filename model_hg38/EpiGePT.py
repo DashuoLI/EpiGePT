@@ -109,7 +109,8 @@ class EpiGePT(pl.LightningModule):
     
     def configure_optimizers(self):
 #         return AdamW(self.parameters(), lr=LEARNING_RATE)
-        return torch.optim.Adam(self.parameters(),lr=LEARNING_RATE)
+#        return torch.optim.Adam(self.parameters(),lr=LEARNING_RATE)
+        return torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()),lr=LEARNING_RATE)
     
     def training_step(self,batch,batch_idx):
         batch_encoder_embeds,batch_inputs_tf,targets,targets_mask = batch
