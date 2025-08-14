@@ -117,14 +117,16 @@ class EpiGePT(pl.LightningModule):
         batch_pre = self.forward(batch_encoder_embeds,batch_inputs_tf)
         batch_pre = batch_pre.view(-1,8)
         targets = targets.view(-1, 8)
-        
         targets_mask = targets_mask.view(-1, 8)
         batch_pre = batch_pre * targets_mask
         loss_fn = nn.MSELoss(reduction='sum')
         loss = loss_fn(batch_pre,targets)
         num_unmasked_elements = torch.sum(targets_mask)
         loss = loss / (num_unmasked_elements+1e-8)
+#        print(loss)
+        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
+
     def validation_step(self,batch,batch_idx):
         batch_encoder_embeds, batch_inputs_tf,targets,targets_mask = batch
         batch_pre = self.forward(batch_encoder_embeds,batch_inputs_tf)
@@ -139,8 +141,8 @@ class EpiGePT(pl.LightningModule):
         loss = loss / (num_unmasked_elements+1e-8)
 #         roc = roc_auc_score(targets.cpu().numpy(),batch_pre.cpu().numpy(),average='macro') 
 #         print('acc ',acc)
-        self.log('val_loss', loss)
-        
+        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
+        return loss
 
     def setup(self,stage):
         np.random.seed(123)
@@ -151,7 +153,7 @@ class EpiGePT(pl.LightningModule):
         np.random.seed(123)
         self.dataset_train, self.dataset_val = torch.utils.data.random_split(dataset,
                                             [train_size, len(dataset) - train_size])
-
+        print(len(self.dataset_train), len(self.dataset_val))
 
     def train_dataloader(self):
         return DataLoader(self.dataset_train, batch_size=self.batch_size, shuffle=True, drop_last=False,num_workers=10)

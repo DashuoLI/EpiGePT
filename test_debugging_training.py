@@ -37,7 +37,7 @@ print(os.environ['CUDA_VISIBLE_DEVICES'])
 # Loading model
 #model_checkpoint = sys.argv[1]
 model = EpiGePT.EpiGePT(WORD_NUM,TF_DIM,BATCH_SIZE)
-#model = load_weights(model,'pretrainModel/model.ckpt')
+model = load_weights(model,'pretrainModel/model.ckpt')
 #model = load_weights(model,model_checkpoint)
 
 #for name, param in model.named_parameters():
@@ -56,38 +56,36 @@ model = EpiGePT.EpiGePT(WORD_NUM,TF_DIM,BATCH_SIZE)
 if __name__ == '__main__':
 	val_every_n_epochs = 1
 	date_str = datetime.now().strftime("%Y-%m-%d")
-	model_checkpoint = sys.argv[1]
-	checkpoints_path = sys.argv[2] #"/u/project/xjzhou/shuoli/methylation_foundation_model/EpiGePT_times10/training_checkpoint/times10_allParamsTrainable"
-	version = int(sys.argv[3])
-	is_frozen = sys.argv[4]
-	model = load_weights(model,model_checkpoint)
-	model.train()
-	if is_frozen == "TRUE":
-		for param in model.convmodule.parameters(): # Freeze convmodule
-			param.requires_grad = False
-		for param in model.encoder.parameters(): # Freeze encoder
-			param.requires_grad = False
+	LEARNING_RATE = 0.001
 	checkpoint_callback = ModelCheckpoint(
-		dirpath=checkpoints_path, # <--- specify this on the trainer itself for version control
+		# dirpath=checkpoints_path, # <--- specify this on the trainer itself for version control
 		filename=f"fa_classifier_{date_str}_{{epoch:02d}}",
 		period=val_every_n_epochs,
 		save_top_k=-1,  # <--- this is important!
 	)
+	model.train()
 	if torch.cuda.is_available():
 		trainer = pl.Trainer(
-			max_epochs=90,
-			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=version),
+			max_epochs=1,
+			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=99),
 			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
 			default_root_dir=os.getcwd(),
 			gpus = 1,
 			)
 	else:
 		trainer = pl.Trainer(
-			max_epochs=90,
-			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=version),
+			max_epochs=1,
+			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=5),
 			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
 			default_root_dir=os.getcwd(),
 			# gpus = 1,
 			)
-
+	before_params = {}
+	for name, param in model.named_parameters():
+		before_params[name] = param.clone().detach()
 	trainer.fit(model)
+	for name, param in model.named_parameters():
+		if torch.equal(before_params[name], param):
+			print(f"{name} did NOT change")
+		else:
+			print(f"{name} changed")
