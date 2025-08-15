@@ -66,9 +66,10 @@ if __name__ == '__main__':
 	model.train()
 	if torch.cuda.is_available():
 		trainer = pl.Trainer(
-			max_epochs=1,
+			max_epochs=2,
 			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=99),
-			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
+			# callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
+			callbacks=[checkpoint_callback],
 			default_root_dir=os.getcwd(),
 			gpus = 1,
 			)
@@ -76,7 +77,8 @@ if __name__ == '__main__':
 		trainer = pl.Trainer(
 			max_epochs=1,
 			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=5),
-			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
+			# callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
+			callbacks=[checkpoint_callback],
 			default_root_dir=os.getcwd(),
 			# gpus = 1,
 			)
@@ -84,8 +86,29 @@ if __name__ == '__main__':
 	for name, param in model.named_parameters():
 		before_params[name] = param.clone().detach()
 	trainer.fit(model)
+	after_params = {}
 	for name, param in model.named_parameters():
-		if torch.equal(before_params[name], param):
+		after_params[name] = param.clone().detach()
+	for name, param in model.named_parameters():
+		before_tensor = before_params[name].to(param.device)
+		if torch.equal(before_tensor, param):
 			print(f"{name} did NOT change")
 		else:
 			print(f"{name} changed")
+	trainer.save_checkpoint(f"checkpoint_at_the_end.ckpt")
+	saved_model= EpiGePT.EpiGePT(WORD_NUM,TF_DIM,BATCH_SIZE)
+	saved_model = load_weights(saved_model, 'checkpoint_at_the_end.ckpt')
+	saved_params = {}
+	for name, param in saved_model.named_parameters():
+		saved_params[name] = param.clone().detach()
+	name = 'fc1.weight'
+	print(f">====== before training param: {name} ======<")
+	before_params[name]
+	print(f">====== after training param: {name} ======<")
+	after_params[name]
+	print(f">====== saved model param: {name} ======<")
+	saved_params[name]
+
+
+
+

@@ -41,7 +41,8 @@ def load_weights(model,path):
     map_location = 'cuda:0' if torch.cuda.is_available() else torch.device('cpu')
     # weights_only is ONLY supported for newer torch versions (e.g., >=2)
     # ret_dict = torch.load('pretrainModel/model.ckpt',map_location=map_location, weights_only=False)['state_dict']
-    ret_dict = torch.load('pretrainModel/model.ckpt',map_location=map_location)['state_dict']
+    # ret_dict = torch.load('pretrainModel/model.ckpt',map_location=map_location)['state_dict']
+    ret_dict = torch.load(path,map_location=map_location)['state_dict']
     # del ret_dict['encoder.embeddings.position_ids']
     model.load_state_dict(ret_dict)
     model = model.eval()
