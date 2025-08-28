@@ -125,6 +125,7 @@ class EpiGePT(pl.LightningModule):
         loss = loss / (num_unmasked_elements+1e-8)
 #        print(loss)
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('train_unmasked_elements', num_unmasked_elements, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self,batch,batch_idx):
@@ -142,6 +143,7 @@ class EpiGePT(pl.LightningModule):
 #         roc = roc_auc_score(targets.cpu().numpy(),batch_pre.cpu().numpy(),average='macro') 
 #         print('acc ',acc)
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('val_unmasked_elements', num_unmasked_elements, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def setup(self,stage):

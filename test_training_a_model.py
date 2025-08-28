@@ -63,19 +63,22 @@ if __name__ == '__main__':
 	model = load_weights(model,model_checkpoint)
 	model.train()
 	if is_frozen == "TRUE":
+		max_epochs = 5
 		for param in model.convmodule.parameters(): # Freeze convmodule
 			param.requires_grad = False
 		for param in model.encoder.parameters(): # Freeze encoder
 			param.requires_grad = False
+	else:
+		max_epochs = 2
 	checkpoint_callback = ModelCheckpoint(
-		dirpath=checkpoints_path, # <--- specify this on the trainer itself for version control
+		dirpath=checkpoints_path, 
 		filename=f"fa_classifier_{date_str}_{{epoch:02d}}",
 		period=val_every_n_epochs,
 		save_top_k=-1,  # <--- this is important!
 	)
 	if torch.cuda.is_available():
 		trainer = pl.Trainer(
-			max_epochs=90,
+			max_epochs=max_epochs,
 			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=version),
 			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
 			default_root_dir=os.getcwd(),
@@ -83,7 +86,7 @@ if __name__ == '__main__':
 			)
 	else:
 		trainer = pl.Trainer(
-			max_epochs=90,
+			max_epochs=max_epochs,
 			logger=pl_loggers.TensorBoardLogger(save_dir='logs', name='TensorBoard', version=version),
 			callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=3), checkpoint_callback],
 			default_root_dir=os.getcwd(),

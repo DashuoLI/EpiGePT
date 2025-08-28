@@ -7,6 +7,8 @@ from model_hg38 import EpiGePT
 from model_hg38.config import *
 from model_hg38.utils import *
 import sys
+from tqdm import tqdm
+
 os.environ['CUDA_VISIBLE_DEVICES']= '1' if torch.cuda.is_available() else '0'
 
 # Load model
@@ -34,7 +36,7 @@ predict.shape # (BATCH_SIZE, Number of bins, Number of epigenomic profiles)
 
 
 # Actual prediction
-test_cell_file = "/u/project/xjzhou/shuoli/methylation_foundation_model/test_cells.npy"
+test_cell_file = sys.argv[2] #"/u/project/xjzhou/shuoli/methylation_foundation_model/test_cells.npy"
 cell_type_array = np.load(test_cell_file)
 
 from model_hg38.dataset import GenomicData
@@ -50,9 +52,9 @@ print(dataset.__len__())
 
 def predict_for_one_index(dataset_region_x_cellline_index, model):
 	# Extract input features to be used in model_prediction method
-	print('processing seq')
+#	print('processing seq')
 	seq_embeds = np.expand_dims(dataset[dataset_region_x_cellline_index][0].numpy(), axis=0)
-	print('processing tf')
+#	print('processing tf')
 	tf_feats = dataset[dataset_region_x_cellline_index][1][:, :-1].numpy()
 	targets_label = dataset[dataset_region_x_cellline_index][2].numpy()
 	targets_mask = dataset[dataset_region_x_cellline_index][3].numpy()
@@ -75,7 +77,7 @@ def predict_for_one_index(dataset_region_x_cellline_index, model):
 	# END of data sanity check
 
 	# Predict
-	print('predicting')
+#	print('predicting')
 	predict = model_predict(model, seq_embeds, tf_feats)
 
 	# Check prediction
@@ -125,16 +127,42 @@ def evaluate_error_for_one_index(predict, targets_label, targets_mask, transform
 #	print(squared_error, abs_error, unmasked_count, squared_error/unmasked_count, abs_error/unmasked_count)
 	return squared_error, abs_error, unmasked_count
 
+N = dataset.__len__()
+# Save results to files
+predictions_file = sys.argv[3] # "predictions.dat"
+labels_file = sys.argv[4] #"labels.dat"
+mask_file = sys.argv[5] #"mask.dat"
+loss_file = sys.argv[6] #"loss.txt" 
+# Create memory-mapped arrays on disk
+predictions_all = np.memmap(predictions_file, dtype=np.float32, mode='w+', shape=(N * 1000, 8))
+labels_all = np.memmap(labels_file, dtype=np.float32, mode='w+', shape=(N * 1000, 8))
+mask_all = np.memmap(mask_file, dtype=np.float32, mode='w+', shape=(N * 1000, 8))
 
 accumulated_sqerr = 0.0
 accumulated_abserr = 0.0
 accumulated_unmask_count = 0.0
-for dataset_sample_idx in range(dataset.__len__()):
+
+for dataset_sample_idx in tqdm(range(N), desc="Predicting"):
 	predict, targets_label, targets_mask = predict_for_one_index(dataset_sample_idx, model)
 	squared_error, abs_error, unmasked_count = evaluate_error_for_one_index(predict, targets_label, targets_mask, transform_type="odds_log1p")
 	accumulated_sqerr += squared_error
 	accumulated_abserr += abs_error
 	accumulated_unmask_count += unmasked_count
+	start_idx = dataset_sample_idx * 1000
+	end_idx = start_idx + 1000
+	predictions_all[start_idx:end_idx] = predict
+	labels_all[start_idx:end_idx] = targets_label
+	mask_all[start_idx:end_idx] = targets_mask
+
+predictions_all.flush()
+labels_all.flush()
+mask_all.flush()
+
+with open(loss_file, 'w') as out:
+	out.write('MSE: ' + str(accumulated_sqerr/accumulated_unmask_count) + '\n')
+	out.write('MAE: ' + str(accumulated_abserr/accumulated_unmask_count) + '\n')
 
 print('MSE:', accumulated_sqerr/accumulated_unmask_count)
 print('MAE:', accumulated_abserr/accumulated_unmask_count)
+
+
